@@ -1,0 +1,134 @@
+     FSUS001D CF  E                    WORKSTN
+     F                                        S1RRN KSFILE SUS001S1
+     FQADSPOBJIF  E                    DISK                           UC
+     E                    SDTA     1919  1
+     ISUSDTA      DS                           1919
+     IDQDATA      DS
+     I                                        21920 SDTA
+     I                                     19211921 BINROW
+     I                                     19221922 BINCOL
+     IODOBTX      DS
+     I                                        1  10 JOBNAM
+     I                                       11  20 USERID
+     I                                       21  26 JOBNUM
+     I            DS
+     I                                    B   1   20BINVAL
+     I                                        2   2 BINCHR
+     I              'Job displayed:'      C         BTXT
+     I              'F3=Exit  F5=Refresh -C         ETXT
+     I              ' Enter=Continue'
+     I              'No qualified interac-C         NJMSG
+     I              'tive jobs found.'
+      *
+     C           *ENTRY    PLIST
+     C                     PARM           DQNAME 10
+      * Load list of active jobs
+     C                     EXSR LOAD
+      * Continue until F3 is pressed
+     C           *INKC     DOUEQ*ON
+     C                     WRITESUS001F1
+     C                     WRITESUS001F2
+     C                     EXFMTSUS001C1
+     C           *INKC     CASEQ*ON       EOJ
+     C           *INKE     CASEQ*ON       LOAD
+     C                     CAS            PROCRQ
+     C                     ENDCS
+      *
+     C                     MOVEL*BLANKS   INFO
+     C                     ENDDO
+      *****************************************************************
+      * Load subfile with list of active jobs
+     C           LOAD      BEGSR
+      *
+     C                     MOVE *ON       *IN21
+     C                     MOVE *OFF      *IN22
+     C                     WRITESUS001C1
+     C                     MOVE *OFF      *IN21
+     C                     MOVE *ZEROS    S1RRN   30
+      *
+      * Load file with list
+     C                     CALL 'SUS002C'
+     C                     PARM '0'       NORCDS  1
+     C           NORCDS    IFEQ *OFF
+     C                     OPEN QADSPOBJ
+      *
+      * Read list and load subfile
+     C           *IN90     DOUEQ*ON
+     C                     READ QADSPOBJ                 90
+     C           *IN90     IFNE *ON
+     C                     MOVE *ON       *IN22
+     C                     MOVELJOBNAM    S1JOB
+     C                     MOVELUSERID    S1USER
+     C                     MOVELJOBNUM    S1JOBN
+     C                     ADD  1         S1RRN
+     C                     WRITESUS001S1
+     C                     ENDIF
+     C                     ENDDO
+      *
+     C                     CLOSEQADSPOBJ
+     C                     ELSE
+     C                     MOVELNJMSG     INFO
+     C                     ENDIF
+     C                     ENDSR
+      *****************************************************************
+     C           PROCRQ    BEGSR
+      * Process requests
+     C           *IN90     DOUEQ*ON
+     C                     READCSUS001S1                 90
+      *
+     C           *IN90     IFNE *ON
+      * Option 5 = display screen
+     C           S1OPT     IFEQ '5'
+     C           NORCDS    ANDEQ*OFF
+     C                     EXSR DSPSUS
+     C                     MOVE *BLANK    S1OPT
+     C                     UPDATSUS001S1
+     C                     ENDIF
+     C                     ENDIF
+     C                     ENDDO
+      *
+     C                     ENDSR
+      *****************************************************************
+      * Display user screen
+     C           DSPSUS    BEGSR
+      * Continue as long as F5 is pressed
+     C           *INKE     DOUNE*ON
+      * Retrieve the screen
+     C                     CALL 'SUS003C'
+     C                     PARM           S1JOBN
+     C                     PARM           DQNAME
+     C                     PARM *BLANKS   DQDATA
+      *
+      * Format data for output
+     C                     MOVEASDTA      SUSDTA
+      *
+      * The text field contains the job information
+     C                     MOVELBTXT      INFO      P
+     C           INFO      CAT  S1JOBN:1  INFO
+     C           INFO      CAT  '/':0     INFO
+     C           INFO      CAT  S1USER:0  INFO
+     C           INFO      CAT  '/':0     INFO
+     C           INFO      CAT  S1JOB:0   INFO
+     C           INFO      CAT  ETXT:1    INFO
+      *
+      * Convert row and column from binary
+     C                     MOVE *ZEROS    BINVAL
+     C                     MOVE BINROW    BINCHR
+     C                     Z-ADDBINVAL    ROW
+     C                     MOVE BINCOL    BINCHR
+     C                     Z-ADDBINVAL    COLUMN
+      *
+      * Display the screen
+     C                     WRITESUS001R1
+     C                     EXFMTSUS001F2
+      * F3 = Exit
+     C           *INKC     IFEQ *ON
+     C                     EXSR EOJ
+     C                     ENDIF
+     C                     ENDDO
+     C                     ENDSR
+      *****************************************************************
+     C           EOJ       BEGSR
+     C                     MOVE *ON       *INLR
+     C                     RETRN
+     C                     ENDSR

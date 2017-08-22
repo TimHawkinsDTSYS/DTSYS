@@ -1,0 +1,11 @@
+             PGM
+
+             OVRDBF     FILE(Qclsrc    ) MBR(*ALL)
+             OVRDBF     FILE(Qcmdsrc   ) MBR(*ALL)
+             OVRDBF     FILE(Qcpysrc   ) MBR(*ALL)
+             OVRDBF     FILE(Qddssrc   ) MBR(*ALL)
+             OVRDBF     FILE(Qrpglesrc ) MBR(*ALL)
+             OVRDBF     FILE(Quimsrc   ) MBR(*ALL)
+             call       a_chksysct
+
+             ENDPGM
